@@ -1,0 +1,22 @@
+{
+  "name": "bulltycoons_contracts",
+  "version": "1.0.0",
+  "description": "Solidity contract for the BullTycoonss collection",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "ganache-cli start --networkId 1337",
+    "test": "truffle test"
+  },
+  "keywords": [
+    "BullTycoonss",
+    "NFT"
+  ],
+  "author": "BullLead",
+  "license": "MIT",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.1"
+  }
+}
