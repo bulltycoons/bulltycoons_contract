@@ -8,7 +8,9 @@
   },
   "scripts": {
     "start": "ganache-cli start --networkId 1337",
-    "test": "truffle test"
+    "test": "truffle test",
+    "test-factory": "truffle test test/testFactory.js",
+    "deploy:dev": "truffle migrate --network=development --reset"
   },
   "keywords": [
     "BullTycoonss",
@@ -17,6 +19,7 @@
   "author": "BullLead",
   "license": "MIT",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.1"
+    "@openzeppelin/contracts": "^4.3.1",
+    "truffle-assertions": "^0.9.2"
   }
 }

@@ -2,15 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-// import "openzeppelin-solidity/contracts/access/Ownable.sol";
-// import "openzeppelin-solidity/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./IFactoryERC721.sol";
 import "./BullTycoons.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 contract BullTycoonsFactory is FactoryERC721, Ownable {
     using Strings for string;
+    using Address for address; 
 
     event Transfer(
         address indexed from,
@@ -19,6 +21,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     );
 
     address public proxyRegistryAddress;
+    address public wethAddress = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
     address public nftAddress;
     string public baseURI = "https://creatures-api.opensea.io/api/factory/";
 
@@ -73,6 +76,26 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
             emit Transfer(_from, _to, i);
         }
     }
+
+    /* Presale Minting: Start */
+    uint public PRESALE_AMOUNT = 5 * 10 ** 16; // Equivalent of 0.05 ETH
+    mapping(address => bool) addressWhitelisted;
+    mapping(address => uint256) addressToMints;
+    modifier addressCanMint() {
+        require(!address(msg.sender).isContract() && tx.origin == msg.sender, "Contracts cannot mint.");
+        _;
+    }
+
+    function presaleMint() public addressCanMint() {
+        require(addressToMints[msg.sender] == 0, "Already minted");
+        require(IERC20(wethAddress).allowance(msg.sender, address(this)) >= PRESALE_AMOUNT, "Allowance not enough");
+        BullTycoons bullTycoons = BullTycoons(nftAddress);
+        IERC20(wethAddress).transferFrom(msg.sender, address(this), PRESALE_AMOUNT);
+        bullTycoons.mintTo(msg.sender);
+        addressToMints[msg.sender] = addressToMints[msg.sender] + 1;
+    }
+
+    /* Presale Minting: End */
 
     function mint(uint256 _optionId, address _toAddress) override public {
         // Must be sent from the owner proxy or owner.
