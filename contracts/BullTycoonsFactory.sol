@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./IFactoryERC721.sol";
 import "./BullTycoons.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
@@ -78,6 +78,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     }
 
     /* Presale Minting: Start */
+
     uint public PRESALE_AMOUNT = 5 * 10 ** 16; // Equivalent of 0.05 ETH
     mapping(address => bool) addressWhitelisted;
     mapping(address => uint256) addressToMints;
@@ -86,6 +87,25 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
         _;
     }
 
+    // Whitelist start --
+    function setWhitelist(address[] memory _addresses) public onlyOwner() {
+        for (uint256 i = 0; i < _addresses.length; i++) {
+            addressWhitelisted[_addresses[i]] = true;
+        }
+    }
+
+    function checkWhitelisted(address _address) public view returns(bool _isWhitelisted) {
+        return addressWhitelisted[_address];
+    }
+
+    function whitelistMint() public {
+        require(addressWhitelisted[msg.sender], "Account not eligible to mint");
+        BullTycoons bullTycoons = BullTycoons(nftAddress);
+        bullTycoons.mintTo(msg.sender);
+        addressWhitelisted[msg.sender] = false;
+    }
+    // Whitelist end --
+
     function presaleMint() public addressCanMint() {
         require(addressToMints[msg.sender] == 0, "Already minted");
         require(IERC20(wethAddress).allowance(msg.sender, address(this)) >= PRESALE_AMOUNT, "Allowance not enough");
@@ -93,6 +113,10 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
         IERC20(wethAddress).transferFrom(msg.sender, address(this), PRESALE_AMOUNT);
         bullTycoons.mintTo(msg.sender);
         addressToMints[msg.sender] = addressToMints[msg.sender] + 1;
+    }
+
+    function getNumberMinted(address _minter) public view returns(uint256 numberMinted) {
+        return addressToMints[_minter];
     }
 
     /* Presale Minting: End */

@@ -3,6 +3,7 @@ const BullTycoons = artifacts.require("BullTycoons");
 const WethMock = artifacts.require("WETHMock");
 const MockProxyRegistry = artifacts.require("MockProxyRegistry");
 const truffleAssert = require('truffle-assertions');
+const { BN, time } = require('@openzeppelin/test-helpers');
 
 const IS_VERBOSE = true; // change to false to hide all logs
 const Logger = {
@@ -62,6 +63,47 @@ contract("Test BullTycoonsFactory", accounts => {
             const response2 = bullTycoonsFactory.presaleMint({from: accounts[2]});
 
             await truffleAssert.fails(response2, truffleAssert.ErrorType.REVERT, "Already minted");
+        });
+    });
+
+    describe("==> Should get all the details from the NFT contract", () => {
+        it("should get the number of NFTs created", async () => {
+            const response = await bullTycoonsNft.totalSupply();
+            Logger.log(BN(response).toString(), "<== Total supply");
+        });
+
+        it("should get the number of NFT minted by user", async () => {
+            const response = await bullTycoonsFactory.getNumberMinted(accounts[0]);
+            Logger.log(BN(response).toString(), "<== Total Minted");
+        });
+    });
+
+    describe("==> Should do all whitelisting things", () => {
+        it("should add whitelisted addresses", async () => {
+            const response = await bullTycoonsFactory.setWhitelist([accounts[1],accounts[2]]);
+            Logger.log(response, "<== Added to whitelist");
+        });
+
+        it("should fail to whitelist addresses because -- not owner of smartcontract", async () => {
+            const response = bullTycoonsFactory.setWhitelist([accounts[1],accounts[2]], {from: accounts[5]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Ownable: caller is not the owner");
+        });
+
+        it("should check if a user is whitelisted", async () => {
+            const response1 = await bullTycoonsFactory.checkWhitelisted(accounts[0]);
+            Logger.log(response1, "<== Should be false");
+            const response2 = await bullTycoonsFactory.checkWhitelisted(accounts[1]);
+            Logger.log(response2, "<== Should be true");
+        });
+
+        it("should mint for a whitelisted account", async () => {
+            const response = await bullTycoonsFactory.whitelistMint({from: accounts[1]});
+            Logger.log(response, "<== Should mint for this account");
+        });
+
+        it("should not mint for a non-whitelisted account", async () => {
+            const response = bullTycoonsFactory.whitelistMint({from: accounts[0]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Account not eligible to mint");
         });
     })
 
