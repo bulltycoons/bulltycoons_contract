@@ -5,7 +5,7 @@ const MockProxyRegistry = artifacts.require("MockProxyRegistry");
 const truffleAssert = require('truffle-assertions');
 const { BN, time } = require('@openzeppelin/test-helpers');
 
-const IS_VERBOSE = false; // change to false to hide all logs
+const IS_VERBOSE = true; // change to false to hide all logs
 const Logger = {
     log: (...args) => {
         if (IS_VERBOSE) {
@@ -30,6 +30,8 @@ contract("Test BullTycoonsFactory", accounts => {
         await token.transfer(accounts[2], '100000000000000000000000000');
         await token.transfer(accounts[3], '100000000000000000000000000');
         await token.transfer(accounts[4], '100000000000000000000000000');
+
+        await bullTycoonsFactory.setStartMinting(true);
         // await token.transfer(airdropper.address, '1000000000000000000000000000', {from: accounts[0]}); // Transfer of all bullcoin to airdropper
         // await airdropper.airdropToUsers([selfdropper.address], '82500000000000000000000000', {from: accounts[0]}); // Airdrop the amount required by selfdropper to function
     });
@@ -45,6 +47,13 @@ contract("Test BullTycoonsFactory", accounts => {
     });
 
     describe("=> Should fail all tests", () => {
+        it("Should revert based on the fact that minting has not started", async () => {
+            await bullTycoonsFactory.setStartMinting(false);
+            const response = bullTycoonsFactory.presaleMint();
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Mint not started");
+            await bullTycoonsFactory.setStartMinting(true);
+        });
+
         it("Should revert based on low allowance", async () => {
             const response = bullTycoonsFactory.presaleMint({from: accounts[1]});
             await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Allowance not enough");
@@ -89,6 +98,16 @@ contract("Test BullTycoonsFactory", accounts => {
         it("should get the number of Total NFTs", async () => {
             const response = await bullTycoonsFactory.getMaxSupply();
             Logger.log(BN(response).toString(), "<== Max supply");
+        });
+
+        it("should get the presale amount", async () => {
+            const response = await bullTycoonsFactory.PRESALE_AMOUNT();
+            Logger.log(BN(response).toString(), "<== PRESALE AMOUNT");
+        });
+
+        it("should get the URI of a token", async () => {
+            const response = await bullTycoonsNft.tokenURI(45);
+            Logger.log(response, "<== Token URI");
         });
     });
 

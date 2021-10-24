@@ -11,7 +11,7 @@ module.exports = async function (deployer, network) {
     //     canOverwrite = false;
     // }
 
-    if (network == 'development') {
+    if (network == ('development' || 'matic_mumbai')) {
         await deployer.deploy(BullTycoons, proxyAddress);
         const bullTycoonNftBase = await BullTycoons.deployed();
         await deployer.deploy(WETHMock, '1000000000000000000000');

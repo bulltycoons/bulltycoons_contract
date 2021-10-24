@@ -24,6 +24,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     address public wethAddress = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
     address public nftAddress;
     string public baseURI = "https://gateway.pinata.cloud/ipfs/QmdLYK4BKcZr5epauNVd2ufj7UtnfgeaSwXsXedmGKddD7";
+    bool public MINT_START = false;
 
     /*
      * Enforce the existence of only 1000 BullTycoons .
@@ -92,17 +93,32 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     }
 
     modifier isMintable() {
+        require(MINT_START, "Mint not started");
         require(BullTycoons(nftAddress).totalSupply() < TOTAL_BULL_SUPPLY, "Maximum mint reached");
         _;
     }
 
-    // Whitelist start --
+    // Admin funcions start --
+    // set start minting to be true or false
+    function setStartMinting(bool _startMinting) public onlyOwner() {
+        MINT_START = _startMinting;
+    }
+
+    // set minting price
+    function setPresaleAmount(uint256 _presaleAmount) public onlyOwner() {
+        PRESALE_AMOUNT = _presaleAmount;
+    }
+
+    // set whitelist addresses
     function setWhitelist(address[] memory _addresses) public onlyOwner() {
         for (uint256 i = 0; i < _addresses.length; i++) {
             addressWhitelisted[_addresses[i]] = true;
         }
     }
+    // Admin functions done --
 
+    // Whitelist start --
+    
     function checkWhitelisted(address _address) public view returns(bool _isWhitelisted) {
         return addressWhitelisted[_address];
     }
@@ -115,7 +131,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     }
     // Whitelist end --
 
-    function presaleMint() public addressCanMint() isMintable() {
+    function presaleMint() public isMintable() addressCanMint() {
         require(addressToMints[msg.sender] == 0, "Already minted");
         require(IERC20(wethAddress).allowance(msg.sender, address(this)) >= PRESALE_AMOUNT, "Allowance not enough");
         BullTycoons bullTycoons = BullTycoons(nftAddress);
