@@ -11,6 +11,7 @@
     "test": "truffle test",
     "test-factory": "truffle test test/testFactory.js",
     "deploy:dev": "truffle migrate --network=development --reset",
+    "deploy:mumbai": "truffle migrate --network=matic_mumbai --reset",
     "compile": "truffle compile"
   },
   "keywords": [
