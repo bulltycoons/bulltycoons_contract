@@ -23,12 +23,12 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     address public proxyRegistryAddress;
     address public wethAddress = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
     address public nftAddress;
-    string public baseURI = "https://creatures-api.opensea.io/api/factory/";
+    string public baseURI = "https://gateway.pinata.cloud/ipfs/QmdLYK4BKcZr5epauNVd2ufj7UtnfgeaSwXsXedmGKddD7";
 
     /*
      * Enforce the existence of only 1000 BullTycoons .
      */
-    uint256 CREATURE_SUPPLY = 1000;
+    uint256 TOTAL_BULL_SUPPLY = 1000;
 
     /*
      * Three different options for minting BullTycoons (basic, premium, and gold).
@@ -46,7 +46,11 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     }
 
     function setMaxSupply(uint256 _maxSupply) public onlyOwner() {
-        CREATURE_SUPPLY = _maxSupply;
+        TOTAL_BULL_SUPPLY = _maxSupply;
+    }
+
+    function getMaxSupply() public view returns (uint256) {
+        return TOTAL_BULL_SUPPLY;
     }
 
     function name() override external pure returns (string memory) {
@@ -87,6 +91,11 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
         _;
     }
 
+    modifier isMintable() {
+        require(BullTycoons(nftAddress).totalSupply() < TOTAL_BULL_SUPPLY, "Maximum mint reached");
+        _;
+    }
+
     // Whitelist start --
     function setWhitelist(address[] memory _addresses) public onlyOwner() {
         for (uint256 i = 0; i < _addresses.length; i++) {
@@ -98,7 +107,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
         return addressWhitelisted[_address];
     }
 
-    function whitelistMint() public {
+    function whitelistMint() public isMintable() {
         require(addressWhitelisted[msg.sender], "Account not eligible to mint");
         BullTycoons bullTycoons = BullTycoons(nftAddress);
         bullTycoons.mintTo(msg.sender);
@@ -106,7 +115,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
     }
     // Whitelist end --
 
-    function presaleMint() public addressCanMint() {
+    function presaleMint() public addressCanMint() isMintable() {
         require(addressToMints[msg.sender] == 0, "Already minted");
         require(IERC20(wethAddress).allowance(msg.sender, address(this)) >= PRESALE_AMOUNT, "Allowance not enough");
         BullTycoons bullTycoons = BullTycoons(nftAddress);
@@ -149,8 +158,8 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
             return false;
         }
 
-        BullTycoons openSeaBullTycoons = BullTycoons(nftAddress);
-        uint256 creatureSupply = openSeaBullTycoons.totalSupply();
+        BullTycoons bullTycoons = BullTycoons(nftAddress);
+        uint256 creatureSupply = bullTycoons.totalSupply();
 
         uint256 numItemsAllocated = 0;
         if (_optionId == SINGLE_CREATURE_OPTION) {
@@ -158,7 +167,7 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
         } else if (_optionId == MULTIPLE_CREATURE_OPTION) {
             numItemsAllocated = NUM_CREATURES_IN_MULTIPLE_CREATURE_OPTION;
         }
-        return creatureSupply < (CREATURE_SUPPLY - numItemsAllocated);
+        return creatureSupply < (TOTAL_BULL_SUPPLY - numItemsAllocated);
     }
 
     function tokenURI(uint256 _optionId) override external view returns (string memory) {

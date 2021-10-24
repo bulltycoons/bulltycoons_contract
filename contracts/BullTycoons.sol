@@ -14,7 +14,7 @@ contract BullTycoons is ERC721Tradable {
     {}
 
     function baseTokenURI() override public pure returns (string memory) {
-        return "https://creatures-api.opensea.io/api/creature/";
+        return "https://gateway.pinata.cloud/ipfs/QmdLYK4BKcZr5epauNVd2ufj7UtnfgeaSwXsXedmGKddD7";
     }
 
     function contractURI() public pure returns (string memory) {

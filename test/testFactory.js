@@ -5,7 +5,7 @@ const MockProxyRegistry = artifacts.require("MockProxyRegistry");
 const truffleAssert = require('truffle-assertions');
 const { BN, time } = require('@openzeppelin/test-helpers');
 
-const IS_VERBOSE = true; // change to false to hide all logs
+const IS_VERBOSE = false; // change to false to hide all logs
 const Logger = {
     log: (...args) => {
         if (IS_VERBOSE) {
@@ -64,6 +64,15 @@ contract("Test BullTycoonsFactory", accounts => {
 
             await truffleAssert.fails(response2, truffleAssert.ErrorType.REVERT, "Already minted");
         });
+
+        it("Should revert based on the fact that max is reached", async () => {
+            await bullTycoonsFactory.setMaxSupply(0);
+            const setAllowance = await token.increaseAllowance(bullTycoonsFactory.address, mintPrice, {from: accounts[2]});
+            const response = bullTycoonsFactory.presaleMint({from: accounts[2]});
+
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Maximum mint reached");
+            await bullTycoonsFactory.setMaxSupply(1000);
+        });
     });
 
     describe("==> Should get all the details from the NFT contract", () => {
@@ -75,6 +84,11 @@ contract("Test BullTycoonsFactory", accounts => {
         it("should get the number of NFT minted by user", async () => {
             const response = await bullTycoonsFactory.getNumberMinted(accounts[0]);
             Logger.log(BN(response).toString(), "<== Total Minted");
+        });
+
+        it("should get the number of Total NFTs", async () => {
+            const response = await bullTycoonsFactory.getMaxSupply();
+            Logger.log(BN(response).toString(), "<== Max supply");
         });
     });
 
