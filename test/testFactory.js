@@ -4,8 +4,9 @@ const WethMock = artifacts.require("WETHMock");
 const MockProxyRegistry = artifacts.require("MockProxyRegistry");
 const truffleAssert = require('truffle-assertions');
 const { BN, time } = require('@openzeppelin/test-helpers');
+const { assert, expect } = require("chai");
 
-const IS_VERBOSE = true; // change to false to hide all logs
+const IS_VERBOSE = false; // change to false to hide all logs
 const Logger = {
     log: (...args) => {
         if (IS_VERBOSE) {
@@ -18,10 +19,11 @@ contract("Test BullTycoonsFactory", accounts => {
 
     let bullTycoonsNft, bullTycoonsFactory, token, proxyAddress;
     let mintPrice = '50000000000000000';
+    const [ baseTokenUri, contractUri ] = [ "https://somebaseuri/metadatas", "https://somecontracturi" ];
 
     before(async() => {
         proxyAddress = await MockProxyRegistry.new();
-        bullTycoonsNft = await BullTycoons.new(proxyAddress.address);
+        bullTycoonsNft = await BullTycoons.new(proxyAddress.address, baseTokenUri, contractUri);
         token = await WethMock.new('1000000000000000000000000000');
         bullTycoonsFactory = await BullTycoonsFactoryMock.new(proxyAddress.address, bullTycoonsNft.address, token.address);
         await bullTycoonsNft.transferOwnership(bullTycoonsFactory.address);
@@ -137,6 +139,85 @@ contract("Test BullTycoonsFactory", accounts => {
         it("should not mint for a non-whitelisted account", async () => {
             const response = bullTycoonsFactory.whitelistMint({from: accounts[0]});
             await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Account not eligible to mint");
+        });
+    })
+
+    describe("==> Should perform all the URI actions", () => {
+        it("should display the basic information about the contract", async () => {
+            const _baseTokenUri = await bullTycoonsNft.baseTokenURI();
+            const _contractUri = await bullTycoonsNft.contractURI();
+            Logger.log(_baseTokenUri, _contractUri, "<== BaseTokenUri & ContractUri");
+        });
+
+        it("should change the baseTokenUri", async () => {
+            const newBaseUri = "https://somenewbaseuri/metadatas/";
+            const response = await bullTycoonsFactory.setBaseTokenUri(newBaseUri);
+            Logger.log(response, "<== Change BaseURI")
+            // confirm it has changed
+            const _baseTokenUri = await bullTycoonsNft.baseTokenURI();
+            Logger.log(_baseTokenUri, "<== New Base Token URI");
+            assert(_baseTokenUri == newBaseUri, "Changed base token URI does not match");
+        });
+
+        it("should fail to change baseTokenUri - not owner", async() => {
+            const newBaseUri = "https://somenewbaseuri/metadatas/";
+            const response = bullTycoonsFactory.setBaseTokenUri(newBaseUri, {from: accounts[5]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "caller is not the owner");
+        })
+
+        it("should change the contractUri", async () => {
+            const newContractUri = "https://somenewcontracturi/";
+            const response = await bullTycoonsFactory.setContractUri(newContractUri);
+            Logger.log(response, "<== Change Contract URI")
+            // confirm it has changed
+            const _contractUri = await bullTycoonsNft.contractURI();
+            Logger.log(_contractUri, "<== New Contract URI");
+            assert(_contractUri == newContractUri, "Changed contract URI does not match");
+        });
+
+        it("should fail to change the contractUri - not owner", async () => {
+            const newContractUri = "https://somenewcontracturi/";
+            const response = bullTycoonsFactory.setContractUri(newContractUri, {from: accounts[5]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "caller is not the owner");
+        });
+
+        it("should change bridge address", async () => {
+            const getBridgeAddr = await bullTycoonsNft.bridgeAddress();
+            Logger.log(getBridgeAddr, "<== Current Bridge Address")
+            // now change the bridge address
+            const response = await bullTycoonsFactory.setBridgeAddress(accounts[0]);
+            Logger.log(response, "<== Changing the bridge address");
+            // now check the new bridge address
+            const getNewBridgeAddr = await bullTycoonsNft.bridgeAddress();
+            Logger.log(getNewBridgeAddr, "<== New Bridge Address");
+            assert(accounts[0] == getNewBridgeAddr, "Bridge address does not match");
+        });
+
+        it("should fail to change bridge address - not owner", async () => {
+            const response = bullTycoonsFactory.setBridgeAddress(accounts[1], {from: accounts[5]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "caller is not the owner");
+        });
+    });
+
+    describe("==> Run all bridge related tests", () => {
+        it("should fail to brigeMint - not bridge", async () => {
+            const response = bullTycoonsNft.bridgeMint(accounts[1], 1, {from: accounts[2]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Only bridge address");
+        });
+
+        it("should fail to brigeBurn - not bridge", async () => {
+            const response = bullTycoonsNft.bridgeBurn(1, {from: accounts[2]});
+            await truffleAssert.fails(response, truffleAssert.ErrorType.REVERT, "Only bridge address");
+        });
+
+        it("should mint token with bridge", async () => {
+            const response = await bullTycoonsNft.bridgeMint(accounts[1], 10, {from: accounts[0]});
+            Logger.log(JSON.stringify(response), "<== Mint token on the chain");
+        });
+
+        it("should burn token with bridge", async () => {
+            const response = await bullTycoonsNft.bridgeBurn(10, {from: accounts[0]});
+            Logger.log(JSON.stringify(response), "<== Burn token on the chain");
         });
     })
 

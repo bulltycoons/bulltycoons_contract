@@ -115,6 +115,21 @@ contract BullTycoonsFactory is FactoryERC721, Ownable {
             addressWhitelisted[_addresses[i]] = true;
         }
     }
+
+    // set bridge address
+    function setBridgeAddress(address _bridgeAddress) public onlyOwner() {
+        BullTycoons(nftAddress)._setBridgeAddress(_bridgeAddress);
+    }
+
+    // set base token URI
+    function setBaseTokenUri(string memory _baseUri) public onlyOwner() {
+        BullTycoons(nftAddress)._setBaseTokenURI(_baseUri);
+    }
+
+    // set contract URI
+    function setContractUri(string memory _contractUri) public onlyOwner() {
+        BullTycoons(nftAddress)._setContractURI(_contractUri);
+    }
     // Admin functions done --
 
     // Whitelist start --
