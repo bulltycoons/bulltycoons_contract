@@ -12,7 +12,7 @@ module.exports = async function (deployer, network) {
     // }
 
     if (network == 'development' || network == 'matic_mumbai') {
-        await deployer.deploy(BullTycoons, proxyAddress, "https://gateway.pinata.cloud/ipfs/QmdLYK4BKcZr5epauNVd2ufj7UtnfgeaSwXsXedmGKddD7", "https://bulltycoons.com");
+        await deployer.deploy(BullTycoons, proxyAddress, "https://bulltycoons-api.herokuapp.com/api/", "https://bulltycoons-api.herokuapp.com/contract");
         const bullTycoonNftBase = await BullTycoons.deployed();
         await deployer.deploy(WETHMock, '1000000000000000000000');
         const WethMock = await WETHMock.deployed();

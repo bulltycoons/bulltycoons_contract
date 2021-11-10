@@ -64,7 +64,7 @@ abstract contract ERC721Tradable is ContentMixin, ERC721Enumerable, NativeMetaTr
     string public baseTokenURI;
 
     function tokenURI(uint256 _tokenId) override public view returns (string memory) {
-        return string(abi.encodePacked(baseTokenURI, Strings.toString(_tokenId), ".json"));
+        return string(abi.encodePacked(baseTokenURI, Strings.toString(_tokenId)));
     }
 
     /**
